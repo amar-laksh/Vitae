@@ -1,0 +1,8 @@
+born
+	listen ("Please enter a text to display: ") into a
+	a is int(a)
+	3 times
+		say a
+		say "hello world"
+	done
+die

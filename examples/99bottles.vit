@@ -1,0 +1,8 @@
+born
+	thing msg is " bottles on the wall."
+	listen("how many bottles to start from?: ") into bottle
+	100 times
+		inc(bottle)
+		say bottle, msg
+	done
+die

@@ -1,0 +1,7 @@
+born
+thing a is "the value of  : "
+listen("Please enter a text to display: ") into value
+3 times
+	say a, value
+done
+die

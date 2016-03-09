@@ -1,0 +1,9 @@
+born
+listen("how many bottles to start from?: ") into bottle
+	
+	2 times
+		2 times
+			say bottle
+		done
+	done
+die
