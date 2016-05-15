@@ -263,7 +263,8 @@ class Vitae():
         """
         if self.execute('printStr', i):
             string = self.execute('printStr',i)
-            self.printSwapVar(strin,False)
+            for char in string:
+                print self.escapeSeq(char)
         elif self.execute('printVar', i):
             self.printSwapVar(i,False)
         elif self.execute('printComboVar', i):
