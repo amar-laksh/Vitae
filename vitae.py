@@ -4,41 +4,44 @@ import os
 import time
 class vitMath(object):
     def __init__(self):
-        self.main = Vitae()
-
+        main = Vitae()
 
     def inc(self,line,vars1,vars2):
+        """
+        inc() - accepts the line and variable name and value to increment
+        """
         everything = []
         vars1 = dict(vars1)
         vars2 = dict(vars2)
-        if re.match(self.main.Vkb['incVar'],line):
+        if re.match(main.Vkb['incVar'],line):
             for k in vars2.keys():
-                if self.main.findWholeWord(k)(line):
+                if main.findWholeWord(k)(line):
                         increasedValue = int(vars2[k]) + 1
                         variableName = k
                         everything.append(variableName)
                         everything.append(str(increasedValue))
             for k in vars1.keys():
-                if self.main.findWholeWord(k)(line):
+                if main.findWholeWord(k)(line):
                         increasedValue = int(vars1[k]) + 1
                         variableName = k
                         everything.append(variableName)
                         everything.append(str(increasedValue))
+
         return tuple(everything)
 
     def dec(self,line,vars1,vars2):
         everything = []
         vars1 = dict(vars1)
         vars2 = dict(vars2)
-        if re.match(self.main.Vkb['decVar'],line):
+        if re.match(main.Vkb['decVar'],line):
             for k in vars2.keys():
-                if self.main.findWholeWord(k)(line):
+                if main.findWholeWord(k)(line):
                         decreasedValue = int(vars2[k]) - 1
                         variableName = k
                         everything.append(variableName)
                         everything.append(str(decreasedValue))
             for k in vars1.keys():
-                if self.main.findWholeWord(k)(line):
+                if main.findWholeWord(k)(line):
                         decreasedValue = int(vars1[k]) - 1
                         variableName = k
                         everything.append(variableName)
@@ -99,9 +102,10 @@ class Vitae():
             'decVar':r'^[\t ]*?dec\([\t ]*?([A-z_]+[0-9]*?[A-z_]*?)+?\)[\t ]*?$'
             }
         self.FuncVkb = {
-            'printStr':r'^[\t ]*?say[\t ]+?["]([\t\n \x20-\x7F]*?)["][\t ]*?$',
+            'printStr':r'^[\t ]*?say[\t ]+?["]([\t\n \x20-\x7F]*)["][\t ]*?$',
             'printVar':r'^[\t ]*?say[\t ]+?([A-z_]+[0-9]*[A-z_]*?)+[\t ]*?$',
             'printExc':r'^[\t ]*?say[\t ]+?([\t\n \x20-\x7F]*?)[\t ]*?$',
+            'printComboStr':r'^[\t ]*?say[\t ]+?["]([\t\n \x20-\x7F]*)["]+([\t ]*?[,] [\t ]*?["]([\t\n \x20-\x7F]*)["]+)+[\t ]*?$',
             'printComboVar':r'^[\t ]*?say[\t ]+?([A-z_]+[0-9]*[A-z_]*?)+([\t ]*?[,] [\t ]*?([A-z_]+[0-9]*[A-z_]*?)+)+[\t ]*?$'
             }
 
@@ -131,7 +135,11 @@ class Vitae():
                 },
             'Say':{
                 ''
-                }
+                },
+            'Math':{
+            'inc':'increment value can only be an integer'
+            }
+
             }
         self.counter = 0
         self.sf = 0
@@ -167,13 +175,13 @@ class Vitae():
 
     def escapeSeq(self,string):
         try:
-            return string.replace('\\n','\n').replace('\\t','\t').replace('\\r','\r')
+            return string.replace('\\n','\n').replace('\\t','\t').replace('\\f','\f').replace('\\b','\b').replace('\\a','\a')
         except:
             return string
 
-    def findWholeWord(self,w):
+    def findWholeWord(self,word):
         try:
-            return re.compile(r'\b({0})\b'.format(w)).search
+            return re.compile(r'\b({0})\b'.format(word)).search
         except:
             return w
 
@@ -193,17 +201,38 @@ class Vitae():
     HELPER FUNCTIONS ENDS ---------------
     """
 
+    def listen(self, line):
+        if re.match(self.Vkb['listenMsg'],line):
+            inputVar2 =  re.findall(self.Vkb['listenMsg'],line)
+            inputList = []
+            message = inputVar2[0][0]
+            variable = inputVar2[0][1]
+            if message:
+                message = self.escapeSeq(message)
+                value = self.getInput(message)
+                inputList.append(variable)
+                inputList.append(value)
+                self.varStr.append(tuple(inputList))
+                self.varsUpdate()
+            else:
+                value = self.getInput()
+                inputList.append(variable)
+                inputList.append(value)
+                self.varStr.append(tuple(inputList))
+                self.varsUpdate()
+        else:
+            self.bug(self.ErrorCodes['Listen']['Error'])
 
-    def execute(self,this,line):
+    def execute(self,func,line):
         """
         execute() - Executes different functions of Vitae
         Params - two parameters 'func,lineOfText'
         Returns - the executed part
         """
-        if re.match(self.FuncVkb[this],line):
-            string = re.findall(self.FuncVkb[this],line)
+        if re.match(self.FuncVkb[func],line):
+            string = re.findall(self.FuncVkb[func],line)
             return string
-        elif not re.match(self.FuncVkb[this],line):
+        elif not re.match(self.FuncVkb[func],line):
             return None
 
     def times(self):
@@ -223,7 +252,6 @@ class Vitae():
                         howManyTimes = re.sub(r'\b({0})\b'.format(k),self.DictVarStr[k] , self.text[scope[0]-1]).split(" ")
                 howManyTimes = int(howManyTimes[0])
 
-
             for repeat in range(0,howManyTimes-1):
                 self.read(scope[0],scope[1])
 
@@ -235,9 +263,8 @@ class Vitae():
         """
         if self.execute('printStr', i):
             string = self.execute('printStr',i)
-            for char in string:
-                print self.escapeSeq(char)
-        if self.execute('printVar', i):
+            self.printSwapVar(strin,False)
+        elif self.execute('printVar', i):
             self.printSwapVar(i,False)
         elif self.execute('printComboVar', i):
             self.printSwapVar(i,True)
@@ -332,43 +359,6 @@ class Vitae():
         return type(inputStream)
 
 
-    def preProcess(self):
-        """
-        preProcess() - Performs the preprocessing of the program file to check for mandatory constructs of Vitae
-        Params - content of a file
-        Returns - None, (sets the various flag for others modules)
-        """
-        if self.checkInLife('start') != 1 or self.checkInLife('end') != 1:
-            self.bug(self.ErrorCodes['Life']['CriticalError'])
-        if self.checkInLife('times') != self.checkInLife('done'):
-            self.bug(self.ErrorCodes['Life']['Times']['PairError'])
-        for i in self.text:
-
-
-            if not re.match(self.Vkb['spaceTab'],i):            #indicates a written language construct is present
-                if re.match(self.Vkb['start'],i) and self.sf == 0:    #checks for the starting of the program
-                    self.sf = 1                                 # indicates the start of the program, should cache this line.
-                if self.sf == 0:
-                    self.bug(self.ErrorCodes['Life']['Born'])
-                if re.match(self.Vkb['things'],i) and self.sf == 1:
-                    if re.match(self.Vkb['thingsInt'],i):
-                        self.varInt.append(re.findall(self.Vkb['thingsInt'],i)[0])
-                    else:
-                        if re.match(self.Vkb['thingsStr'],i):
-                            self.varStr.append(re.findall(self.Vkb['thingsStr'],i)[0])
-                        elif not re.match(self.Vkb['thingsStr'],i):
-                            self.bug(self.ErrorCodes['Thing']['Error']['Assignment'])
-                if re.match(self.Vkb['end'],i) and self.sf == 1:
-                    self.ef = 1
-                if i == self.text[-1]:
-                    if re.match(self.Vkb['end'],i) and self.sf == 1:
-                        self.ef = 1
-                    if self.ef == 0:
-                        self.bug(self.ErrorCodes['Life']['Die'])
-        self.DictVarStr = self.listToDict(self.varStr)
-        self.DictVarInt = self.listToDict(self.varInt)
-        self.varCheck()
-
     def encryptStr(self):
         """
         encryptStr() - encrypts the string values used in the program to a standard so as to avoid interpreter confusion and enabling security
@@ -378,6 +368,7 @@ class Vitae():
             if(re.match(self.Vkb['strings'],i)):
                 listOfStrings.append(re.findall(self.Vkb['strings'],i))
         return listOfStrings
+
 
     def getScope(self, start, end):
         """
@@ -402,7 +393,11 @@ class Vitae():
         scopeNos = scopeNos[::-1]
         return scope,scopeNos
 
+
     def varCheck(self):
+        """
+        TODO - REFACTOR METHOD
+        """
         """
         varCheck() - checks the variables used in the program to see the following-
                         1. whether they are initialized or not
@@ -427,9 +422,12 @@ class Vitae():
         if not len(usage) == 0:
             self.bug(self.ErrorCodes['Thing']['Warning']['Unused'])
 
+
     def checkInLife(self,checkWhat):
             """
             checkInLife() - checks the program (life) is in correct form
+            Params - checks a language construct
+            Returns - no of constructs present in the program
             """
             noOf = []
             for i in self.text:
@@ -438,6 +436,87 @@ class Vitae():
                 except:
                     pass
             return len(noOf)
+
+
+    def preProcess(self):
+        """
+        preProcess() - Performs the preprocessing of the program file to check for mandatory constructs of Vitae
+        Params - content of a file
+        Returns - None, (sets the various flag for others modules)
+        """
+        if self.checkInLife('start') != 1 or self.checkInLife('end') != 1:
+            self.bug(self.ErrorCodes['Life']['CriticalError'])
+
+        if self.checkInLife('times') != self.checkInLife('done'):
+            self.bug(self.ErrorCodes['Life']['Times']['PairError'])
+            
+        for i in self.text:
+            if not re.match(self.Vkb['spaceTab'],i):            #indicates a written language construct is present
+
+                if re.match(self.Vkb['start'],i) and self.sf == 0:    #checks for the starting of the program
+                    self.sf = 1                                 # indicates the start of the program, should cache this line.
+                
+                if self.sf == 0:
+                    self.bug(self.ErrorCodes['Life']['Born'])
+
+                if re.match(self.Vkb['things'],i) and self.sf == 1:
+                    if re.match(self.Vkb['thingsInt'],i):
+                        self.varInt.append(re.findall(self.Vkb['thingsInt'],i)[0])
+                    else:
+                        if re.match(self.Vkb['thingsStr'],i):
+                            self.varStr.append(re.findall(self.Vkb['thingsStr'],i)[0])
+                        elif not re.match(self.Vkb['thingsStr'],i):
+                            self.bug(self.ErrorCodes['Thing']['Error']['Assignment'])
+                
+                if re.match(self.Vkb['end'],i) and self.sf == 1:
+                    self.ef = 1
+        
+                if i == self.text[-1]:
+                    if re.match(self.Vkb['end'],i) and self.sf == 1:
+                        self.ef = 1
+
+                    if self.ef == 0:
+                        self.bug(self.ErrorCodes['Life']['Die'])
+
+                    if not re.match(self.Vkb['end'],i):
+                        self.bug(self.ErrorCodes['Life']['CriticalError'])                        
+                    
+        self.varsUpdate() 
+        self.varCheck()
+
+
+    def read(self,startpos,endpos):
+        """
+        read(startpos, endpos) - reads the input file text between a start position to end postion
+        Params - start position, end position
+        Returns - None 
+        """
+        self.preProcess()
+
+        for i in self.text[startpos:endpos]:
+            if not re.match(self.Vkb['spaceTab'],i):            #indicates a written language construct is present
+                if re.match(self.Vkb['listen'],i):
+                    self.listen(i)
+
+                elif re.match(self.Vkb['times'],i):
+                    self.times()
+
+                elif re.match(self.Vkb['inc'], i):
+                    self.varStr.append(
+                        vitMath().inc(i,self.DictVarInt,self.DictVarStr)
+                        )
+                    self.varsUpdate()
+
+                elif re.match(self.Vkb['dec'], i):
+                    self.varStr.append(
+                        vitMath().dec(i,self.DictVarInt,self.DictVarStr)
+                        )
+                    self.varsUpdate()
+
+                elif re.match(self.Vkb['print'],i):
+                    self.printing(i)
+            self.counter = self.counter + 1
+
 
     def reader(self,fileName):
         """
@@ -453,46 +532,9 @@ class Vitae():
         startTime = time.time()
 
         self.read(0,len(self.text))
-
         endTime = time.time()
         print "\n\n-> Program Completed in: ",(endTime-startTime),"s"
 
-    def read(self,startpos,endpos):
-        self.preProcess()
-        for i in self.text[startpos:endpos]:
-            if not re.match(self.Vkb['spaceTab'],i):            #indicates a written language construct is present
-                if re.match(self.Vkb['listen'],i):              # Listen construct
-                    if re.match(self.Vkb['listenMsg'],i):
-                        inputVar2 =  re.findall(self.Vkb['listenMsg'],i)
-                        inputList = []
-                        message = inputVar2[0][0]
-                        variable = inputVar2[0][1]
-                        if message:
-                            message = self.escapeSeq(message)
-                            value = self.getInput(message)
-                            inputList.append(variable)
-                            inputList.append(value)
-                            self.varStr.append(tuple(inputList))
-                            self.varsUpdate()
-                        else:
-                            value = self.getInput()
-                            inputList.append(variable)
-                            inputList.append(value)
-                            self.varStr.append(tuple(inputList))
-                            self.varsUpdate()
-                    else:
-                        self.bug(self.ErrorCodes['Listen']['Error'])
-                if re.match(self.Vkb['times'],i):
-                    self.times()
-                elif re.match(self.Vkb['inc'], i):
-                    self.varStr.append(vitMath().inc(i,self.DictVarInt,self.DictVarStr))
-                    self.varsUpdate()
-                elif re.match(self.Vkb['dec'], i):
-                    self.varStr.append(vitMath().dec(i,self.DictVarInt,self.DictVarStr))
-                    self.varsUpdate()
-                elif re.match(self.Vkb['print'],i):           # Checks for the presence of the "say" keyword
-                    self.printing(i)
-            self.counter = self.counter + 1
 
     def init(self):
         """
@@ -505,6 +547,7 @@ class Vitae():
         elif(len(sys.argv)==3):
             filePath = os.path.abspath(sys.argv[2])
             self.reader(filePath)
-            #self.debug()
+            # self.debug()
 v = Vitae()
 v.init()
+
