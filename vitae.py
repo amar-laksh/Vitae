@@ -4,7 +4,7 @@ import os
 import time
 class vitMath(object):
     def __init__(self):
-        main = Vitae()
+        self.main = Vitae()
 
     def inc(self,line,vars1,vars2):
         """
@@ -13,15 +13,15 @@ class vitMath(object):
         everything = []
         vars1 = dict(vars1)
         vars2 = dict(vars2)
-        if re.match(main.Vkb['incVar'],line):
+        if re.match(self.main.Vkb['incVar'],line):
             for k in vars2.keys():
-                if main.findWholeWord(k)(line):
+                if self.main.findWholeWord(k)(line):
                         increasedValue = int(vars2[k]) + 1
                         variableName = k
                         everything.append(variableName)
                         everything.append(str(increasedValue))
             for k in vars1.keys():
-                if main.findWholeWord(k)(line):
+                if self.main.findWholeWord(k)(line):
                         increasedValue = int(vars1[k]) + 1
                         variableName = k
                         everything.append(variableName)
@@ -33,20 +33,21 @@ class vitMath(object):
         everything = []
         vars1 = dict(vars1)
         vars2 = dict(vars2)
-        if re.match(main.Vkb['decVar'],line):
+        if re.match(self.main.Vkb['decVar'],line):
             for k in vars2.keys():
-                if main.findWholeWord(k)(line):
+                if self.main.findWholeWord(k)(line):
                         decreasedValue = int(vars2[k]) - 1
                         variableName = k
                         everything.append(variableName)
                         everything.append(str(decreasedValue))
             for k in vars1.keys():
-                if main.findWholeWord(k)(line):
+                if self.main.findWholeWord(k)(line):
                         decreasedValue = int(vars1[k]) - 1
                         variableName = k
                         everything.append(variableName)
                         everything.append(str(decreasedValue))
         return tuple(everything)
+
 
 
 class Vitae():
@@ -202,6 +203,9 @@ class Vitae():
     """
 
     def listen(self, line):
+        """
+        TODO - REFACTOR
+        """
         if re.match(self.Vkb['listenMsg'],line):
             inputVar2 =  re.findall(self.Vkb['listenMsg'],line)
             inputList = []
@@ -239,6 +243,7 @@ class Vitae():
         """
         TODO - REFACTOR THE METHOD
         """
+        self.varsUpdate()
         howManyTimes = 0
         timesConst,timesScopes = self.getScope('times','done')
         for scope in timesScopes:
@@ -480,9 +485,8 @@ class Vitae():
                         self.bug(self.ErrorCodes['Life']['Die'])
 
                     if not re.match(self.Vkb['end'],i):
-                        self.bug(self.ErrorCodes['Life']['CriticalError'])                        
-                    
-        self.varsUpdate() 
+                        self.bug(self.ErrorCodes['Life']['CriticalError'])
+        self.varsUpdate()
         self.varCheck()
 
 
@@ -490,12 +494,12 @@ class Vitae():
         """
         read(startpos, endpos) - reads the input file text between a start position to end postion
         Params - start position, end position
-        Returns - None 
+        Returns - None
         """
         self.preProcess()
 
         for i in self.text[startpos:endpos]:
-            if not re.match(self.Vkb['spaceTab'],i):            #indicates a written language construct is present
+            if not re.match(self.Vkb['spaceTab'],i): #indicates a written language construct is present
                 if re.match(self.Vkb['listen'],i):
                     self.listen(i)
 
@@ -546,9 +550,13 @@ class Vitae():
         if (len(sys.argv)>3 or len(sys.argv)<3):
             print("USAGE: vitae.py -c (filename)")
         elif(len(sys.argv)==3):
-            filePath = os.path.abspath(sys.argv[2])
-            self.reader(filePath)
+            try:
+                filePath = os.path.abspath(sys.argv[2])
+                self.reader(filePath)
+            except:
+                raise()
             # self.debug()
+
 v = Vitae()
 v.init()
 

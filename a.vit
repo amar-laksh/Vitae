@@ -1,0 +1,6 @@
+born
+listen("Please enter something:") into word
+10 times
+	say word
+done
+die

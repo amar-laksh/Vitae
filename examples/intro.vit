@@ -1,7 +1,8 @@
 born
-thing a is "the value of  : "
+thing msg is "the text is: "
 listen("Please enter a text to display: ") into value
-3 times
-	say a, value
+listen("Tell me the times to print that text: ") into loop
+loop times
+	say msg, value
 done
 die
